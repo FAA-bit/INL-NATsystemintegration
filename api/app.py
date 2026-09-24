@@ -10,7 +10,7 @@ import time
 # Configuration
 # =========================================================
 
-MQTT_BROKER = "172.16.217.1"     ## Just an example, replace with your MQTT broker address.
+MQTT_BROKER = "172.16.219.12"     ## Just an example, replace with your MQTT broker address.
 MQTT_PORT = 1883
 MQTT_TOPIC = "iot/esp32/dht11"
 
@@ -33,6 +33,8 @@ latest_data = {
     "temperature": None,
     "humidity": None
 }
+
+messages_received = 0
 
 data_lock = threading.Lock()
 
@@ -57,6 +59,7 @@ def on_connect(client, userdata, flags, reason_code, properties=None):
 def on_message(client, userdata, message):
 
     global latest_data
+    global messages_received
 
     try:
         payload = message.payload.decode("utf-8")
@@ -111,8 +114,10 @@ def on_message(client, userdata, message):
                 "temperature": temperature,
                 "humidity": humidity
             }
-
-        print("Sensor data updated successfully.")
+    
+        messages_received += 1
+        print(f"Sensor data updated successfully.")
+        print(f"Total messages received: {messages_received}")  
 
     except json.JSONDecodeError:
 
@@ -225,7 +230,10 @@ def get_sensor_data():
 def health():
 
     return jsonify({
-        "status": "ok"
+        "status": "ok",
+        "messages_received": messages_received,
+        "latest_temperature": latest_data["temperature"],
+        "latest_humidity": latest_data["humidity"]
     }), 200
 
 
